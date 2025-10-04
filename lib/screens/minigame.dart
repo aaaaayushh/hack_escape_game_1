@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flame/components.dart';
 import 'package:flame/text.dart';
 import 'package:flame_markdown/flame_markdown.dart';

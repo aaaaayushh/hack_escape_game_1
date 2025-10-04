@@ -4,7 +4,6 @@ import 'package:flame/experimental.dart';
 import 'package:flame/game.dart';
 // ..add(GlowEffect(10.0, EffectController(duration: 2, infinite: true)))
 import 'package:flutter/material.dart' hide Route;
-import 'package:hack_game/components/panel.dart';
 import 'package:hack_game/components/round_rectangle_component.dart';
 import 'package:hack_game/screens/server_info.dart';
 

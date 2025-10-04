@@ -1,6 +1,6 @@
 name: hack_game
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
@@ -26,8 +26,10 @@ flutter:
     - assets/images/Connection.png
     - assets/images/Safe.png
     - assets/images/Observation.png
+    - assets/images/Background before hack.png
+    - assets/images/Background after hack.png
   #   - images/a_dot_ham.jpeg
-  # 
+  #
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

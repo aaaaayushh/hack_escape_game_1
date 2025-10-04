@@ -3,9 +3,11 @@ import 'package:flame/game.dart';
 
 import 'package:flutter/material.dart';
 import 'package:hack_game/screens/level_two.dart';
+import 'package:hack_game/screens/loading_screen.dart';
 
 class HackGame extends FlameGame {
   late CameraComponent cam;
+  late LoadingScreen loadingScreen;
   late LevelTwo levelTwo;
 
   @override
@@ -22,21 +24,18 @@ class HackGame extends FlameGame {
 
   Future<void> _loadLevels() async {
     add(FpsTextComponent());
-    // Level level = Level();
-    // MiniGame minigame = MiniGame(color: Colors.white);
     levelTwo = LevelTwo();
-    // ServerInfo serverInfo = ServerInfo(color: Colors.grey);
+    loadingScreen = LoadingScreen();
 
     cam = CameraComponent.withFixedResolution(
-      world: levelTwo,
+      world: loadingScreen,
       width: 1920,
       height: 1080,
     );
 
     cam.viewfinder.anchor = Anchor.topLeft;
 
-    // addAll([cam, level]);
-    addAll([cam, levelTwo]);
+    addAll([cam, loadingScreen, levelTwo]);
   }
 }
 
