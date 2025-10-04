@@ -4,10 +4,16 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:hack_game/screens/level_two.dart';
 import 'package:hack_game/screens/loading_screen.dart';
+import 'package:hack_game/screens/phase_zero.dart';
+import 'package:hack_game/screens/phase_one.dart';
+import 'package:hack_game/screens/power_dashboard.dart';
 
 class HackGame extends FlameGame {
   late CameraComponent cam;
   late LoadingScreen loadingScreen;
+  late PhaseZero phaseZero;
+  late PhaseOne phaseOne;
+  late PowerDashboard powerDashboard;
   late LevelTwo levelTwo;
 
   @override
@@ -24,6 +30,9 @@ class HackGame extends FlameGame {
 
   Future<void> _loadLevels() async {
     add(FpsTextComponent());
+    phaseZero = PhaseZero();
+    phaseOne = PhaseOne();
+    powerDashboard = PowerDashboard();
     levelTwo = LevelTwo();
     loadingScreen = LoadingScreen();
 
@@ -35,7 +44,7 @@ class HackGame extends FlameGame {
 
     cam.viewfinder.anchor = Anchor.topLeft;
 
-    addAll([cam, loadingScreen, levelTwo]);
+    addAll([cam, loadingScreen, phaseZero, phaseOne, powerDashboard, levelTwo]);
   }
 }
 

@@ -32,8 +32,8 @@ class LoadingScreen extends World
           content: "Press to Start",
           fontColor: Colors.white,
           tapDownFunction: () {
-            // Switch camera to levelTwo
-            game.cam.world = game.levelTwo;
+            // Switch camera to phaseZero (calm hospital interface)
+            game.cam.world = game.phaseZero;
           },
         )..add(
           GlowEffect(

@@ -21,7 +21,23 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/images/mail.png
+    - assets/images/phase0_icons/chat.png
+    - assets/images/phase0_icons/contacts.png
+    - assets/images/phase0_icons/epd.png
+    - assets/images/phase0_icons/docs.png
+    - assets/images/phase0_icons/power.png
+    - assets/images/phase0_icons/network.png
+    - assets/images/phase0_icons/pager.png
+    - assets/images/phase0_icons/mail.png
+    - assets/images/phase0_icons/chat_blackout.png
+    - assets/images/phase0_icons/contacts_blackout.png
+    - assets/images/phase0_icons/epd_blackout.png
+    - assets/images/phase0_icons/docs_blackout.png
+    - assets/images/phase0_icons/power_blackout.png
+    - assets/images/phase0_icons/network_blackout.png
+    - assets/images/phase0_icons/pager_blackout.png
+    - assets/images/phase0_icons/mail_blackout.png
+    - assets/images/hacker.png
     - assets/images/Infected.png
     - assets/images/Connection.png
     - assets/images/Safe.png
