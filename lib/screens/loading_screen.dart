@@ -34,6 +34,8 @@ class LoadingScreen extends World
           tapDownFunction: () {
             // Switch camera to phaseZero (calm hospital interface)
             game.cam.world = game.phaseZero;
+            // Start the sequence for phase zero
+            game.phaseZero.startSequence();
           },
         )..add(
           GlowEffect(

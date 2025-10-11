@@ -7,6 +7,7 @@ import 'package:hack_game/hack_game.dart';
 class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
   PhaseZero();
   bool hasTransitioned = false;
+  bool hasStarted = false;
 
   @override
   Future<void> onLoad() async {
@@ -43,6 +44,11 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
 
     // App grid - 2 rows, 4 columns
     _addAppGrid(screenWidth, screenHeight);
+  }
+
+  void startSequence() {
+    if (hasStarted) return;
+    hasStarted = true;
 
     // Trigger hack transition after a few seconds
     add(
@@ -61,6 +67,8 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
   void _triggerHackTransition() {
     hasTransitioned = true;
     game.cam.world = game.phaseOne;
+    // Start the sequence for phase one
+    game.phaseOne.startSequence();
   }
 
   void _addStatusBar(double screenWidth) {

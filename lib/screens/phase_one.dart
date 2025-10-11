@@ -10,6 +10,7 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
   late TextComponent hospitalLogo;
   late List<_HackedAppIcon> appIcons;
   bool isTransitioning = false;
+  bool hasStarted = false;
 
   PhaseOne();
 
@@ -48,6 +49,14 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
     );
     add(hospitalLogo);
 
+    // Add hacked app grid
+    await _addHackedAppGrid(screenWidth, screenHeight);
+  }
+
+  void startSequence() {
+    if (hasStarted) return;
+    hasStarted = true;
+
     // Start the hack transition sequence after a short delay
     add(
       TimerComponent(
@@ -58,9 +67,6 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
         },
       ),
     );
-
-    // Add hacked app grid
-    await _addHackedAppGrid(screenWidth, screenHeight);
   }
 
   void _addStatusBar(double screenWidth) {
@@ -496,7 +502,7 @@ class _HackedAppIcon extends PositionComponent
           onTick: () {
             labelVisible = !labelVisible;
             final newOpacity = labelVisible ? 1.0 : 0.4;
-            final textPaint = label.textRenderer as TextPaint;
+            final textPaint = label.textRenderer;
             label.textRenderer = TextPaint(
               style: textPaint.style.copyWith(
                 color: Color(0xFFFF0000).withOpacity(newOpacity),
