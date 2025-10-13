@@ -8,6 +8,7 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
   PhaseZero();
   bool hasTransitioned = false;
   bool hasStarted = false;
+  late TextComponent companyNameText;
 
   @override
   Future<void> onLoad() async {
@@ -25,22 +26,21 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
     // Status bar at top
     _addStatusBar(screenWidth);
 
-    // Hospital logo/wallpaper text (centered upper area)
-    add(
-      TextComponent(
-        text: 'St. Aegis Medical',
-        textRenderer: TextPaint(
-          style: TextStyle(
-            color: Color(0xFFB0BEC5),
-            fontSize: 56,
-            fontWeight: FontWeight.w300,
-            letterSpacing: 3,
-          ),
+    // Hospital logo/wallpaper text (centered upper area) - uses dynamic company name
+    companyNameText = TextComponent(
+      text: 'Company Name', // Will be updated in startSequence
+      textRenderer: TextPaint(
+        style: TextStyle(
+          color: Color(0xFFB0BEC5),
+          fontSize: 56,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 3,
         ),
-        position: Vector2(screenWidth / 2, 200),
-        anchor: Anchor.center,
       ),
+      position: Vector2(screenWidth / 2, 200),
+      anchor: Anchor.center,
     );
+    add(companyNameText);
 
     // App grid - 2 rows, 4 columns
     _addAppGrid(screenWidth, screenHeight);
@@ -49,6 +49,9 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
   void startSequence() {
     if (hasStarted) return;
     hasStarted = true;
+
+    // Update the company name text with the value entered by user
+    companyNameText.text = game.companyName;
 
     // Trigger hack transition after a few seconds
     add(
@@ -72,19 +75,35 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
   }
 
   void _addStatusBar(double screenWidth) {
-    // Time display (08:41)
-    add(
-      TextComponent(
-        text: '08:41',
-        textRenderer: TextPaint(
-          style: TextStyle(
-            color: Color(0xFF1A1A1A),
-            fontSize: 40,
-            fontWeight: FontWeight.w500,
-          ),
+    // Time display - real time
+    final now = DateTime.now();
+    final timeString =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+    final timeDisplay = TextComponent(
+      text: timeString,
+      textRenderer: TextPaint(
+        style: TextStyle(
+          color: Color(0xFF1A1A1A),
+          fontSize: 40,
+          fontWeight: FontWeight.w500,
         ),
-        position: Vector2(screenWidth / 2, 45),
-        anchor: Anchor.center,
+      ),
+      position: Vector2(screenWidth / 2, 45),
+      anchor: Anchor.center,
+    );
+    add(timeDisplay);
+
+    // Update time every minute
+    add(
+      TimerComponent(
+        period: 60.0,
+        repeat: true,
+        onTick: () {
+          final now = DateTime.now();
+          timeDisplay.text =
+              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+        },
       ),
     );
 
@@ -128,22 +147,22 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
       {'name': 'Pager', 'icon': 'phase0_icons/pager.png'},
     ];
 
-    final iconSize = 200.0;
-    final iconSpacing = 100.0;
+    final iconSize = 280.0;
+    final iconSpacing = 120.0;
 
     // Calculate grid positioning (centered on screen)
     final gridWidth = (iconSize * 4) + (iconSpacing * 3);
     final gridHeight =
-        (iconSize * 2) + (iconSpacing * 1) + 140; // Extra space for labels
+        (iconSize * 2) + (iconSpacing * 1) + 120; // Extra space for labels
     final startX = (screenWidth - gridWidth) / 2;
-    final startY = (screenHeight - gridHeight) / 2 + 100; // Offset down a bit
+    final startY = (screenHeight - gridHeight) / 2 + 60; // Offset down a bit
 
     for (int i = 0; i < apps.length; i++) {
       final row = i ~/ 4;
       final col = i % 4;
 
       final x = startX + (col * (iconSize + iconSpacing));
-      final y = startY + (row * (iconSize + iconSpacing + 140));
+      final y = startY + (row * (iconSize + iconSpacing + 60));
 
       // Create app icon container
       _addAppIcon(
@@ -161,24 +180,6 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
     required String appName,
     required String iconAsset,
   }) {
-    // Add shadow using a custom component
-    add(
-      _RoundedIconShadow(
-        position: position + Vector2(0, 4),
-        size: Vector2(size, size),
-        borderRadius: 24,
-      ),
-    );
-
-    // App icon background (rounded square)
-    add(
-      _RoundedIconContainer(
-        position: position,
-        size: Vector2(size, size),
-        borderRadius: 24,
-      ),
-    );
-
     // Try to load icon image if available, otherwise show placeholder
     try {
       final iconSprite = SpriteComponent(
@@ -238,55 +239,5 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
       paint: Paint()..color = Colors.transparent,
     );
     add(tapArea);
-  }
-}
-
-// Custom component for rounded icon container
-class _RoundedIconContainer extends PositionComponent {
-  final double borderRadius;
-
-  _RoundedIconContainer({
-    required Vector2 size,
-    required Vector2 position,
-    required this.borderRadius,
-  }) : super(size: size, position: position);
-
-  @override
-  void render(Canvas canvas) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    final rrect = RRect.fromRectAndRadius(
-      Offset.zero & size.toSize(),
-      Radius.circular(borderRadius),
-    );
-
-    canvas.drawRRect(rrect, paint);
-  }
-}
-
-// Custom component for rounded icon shadow
-class _RoundedIconShadow extends PositionComponent {
-  final double borderRadius;
-
-  _RoundedIconShadow({
-    required Vector2 size,
-    required Vector2 position,
-    required this.borderRadius,
-  }) : super(size: size, position: position);
-
-  @override
-  void render(Canvas canvas) {
-    final paint = Paint()
-      ..color = Color(0x20000000)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 8);
-
-    final rrect = RRect.fromRectAndRadius(
-      Offset.zero & size.toSize(),
-      Radius.circular(borderRadius),
-    );
-
-    canvas.drawRRect(rrect, paint);
   }
 }

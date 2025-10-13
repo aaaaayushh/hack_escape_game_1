@@ -70,19 +70,35 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
   }
 
   void _addStatusBar(double screenWidth) {
-    // Time display (glitched)
-    add(
-      TextComponent(
-        text: '08:41',
-        textRenderer: TextPaint(
-          style: TextStyle(
-            color: Color(0xFF8EC4BB),
-            fontSize: 40,
-            fontWeight: FontWeight.w500,
-          ),
+    // Time display - real time (glitched color)
+    final now = DateTime.now();
+    final timeString =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+    final timeDisplay = TextComponent(
+      text: timeString,
+      textRenderer: TextPaint(
+        style: TextStyle(
+          color: Color(0xFF8EC4BB),
+          fontSize: 40,
+          fontWeight: FontWeight.w500,
         ),
-        position: Vector2(screenWidth / 2, 45),
-        anchor: Anchor.center,
+      ),
+      position: Vector2(screenWidth / 2, 45),
+      anchor: Anchor.center,
+    );
+    add(timeDisplay);
+
+    // Update time every minute
+    add(
+      TimerComponent(
+        period: 60.0,
+        repeat: true,
+        onTick: () {
+          final now = DateTime.now();
+          timeDisplay.text =
+              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+        },
       ),
     );
 
@@ -114,8 +130,8 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
   void _addWarningBanner(double screenWidth) {
     // Warning background bar
     final warningBar = RectangleComponent(
-      size: Vector2(screenWidth, 100),
-      position: Vector2(0, 100),
+      size: Vector2(screenWidth, 60),
+      position: Vector2(0, 90),
       paint: Paint()..color = Color(0xFFFF0000).withOpacity(0.2),
     );
     add(warningBar);
@@ -126,11 +142,11 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
       textRenderer: TextPaint(
         style: TextStyle(
           color: Color(0xFFFF0000),
-          fontSize: 48,
+          fontSize: 32,
           fontWeight: FontWeight.bold,
         ),
       ),
-      position: Vector2(screenWidth / 2 - 550, 140),
+      position: Vector2(screenWidth / 2 - 420, 120),
       anchor: Anchor.center,
     );
     add(warningIcon);
@@ -141,12 +157,12 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
       textRenderer: TextPaint(
         style: TextStyle(
           color: Color(0xFFFF0000),
-          fontSize: 40,
+          fontSize: 28,
           fontWeight: FontWeight.bold,
           letterSpacing: 2,
         ),
       ),
-      position: Vector2(screenWidth / 2 + 50, 140),
+      position: Vector2(screenWidth / 2 + 50, 120),
       anchor: Anchor.center,
     );
     add(warningText);
@@ -231,14 +247,14 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
       },
     ];
 
-    final iconSize = 200.0;
-    final iconSpacing = 100.0;
+    final iconSize = 280.0;
+    final iconSpacing = 120.0;
 
     // Calculate grid positioning
     final gridWidth = (iconSize * 4) + (iconSpacing * 3);
-    final gridHeight = (iconSize * 2) + (iconSpacing * 1) + 140;
+    final gridHeight = (iconSize * 2) + (iconSpacing * 1) + 120;
     final startX = (screenWidth - gridWidth) / 2;
-    final startY = (screenHeight - gridHeight) / 2 + 100;
+    final startY = (screenHeight - gridHeight) / 2 + 60;
 
     appIcons = [];
 
@@ -247,7 +263,7 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
       final col = i % 4;
 
       final x = startX + (col * (iconSize + iconSpacing));
-      final y = startY + (row * (iconSize + iconSpacing + 140));
+      final y = startY + (row * (iconSize + iconSpacing + 60));
 
       final app = apps[i];
       final icon = _HackedAppIcon(
@@ -345,28 +361,12 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
 
     // Hacker silhouette
     final hackerImage = SpriteComponent(
-      sprite: Sprite(game.images.fromCache('hacker.png')),
-      size: Vector2(400, 400),
-      position: Vector2(screenWidth / 2, screenHeight / 2 - 80),
+      sprite: Sprite(game.images.fromCache('escape_the hack_logo.png')),
+      size: Vector2(700, 700),
+      position: Vector2(screenWidth / 2, screenHeight / 2),
       anchor: Anchor.center,
     );
     add(hackerImage);
-
-    // Hacker message
-    final hackerMessage = TextComponent(
-      text: 'Your systems are mine.\nTry to stop me…',
-      textRenderer: TextPaint(
-        style: TextStyle(
-          color: Color(0xFF00FF00),
-          fontSize: 64,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 2,
-        ),
-      ),
-      position: Vector2(screenWidth / 2, screenHeight / 2 + 280),
-      anchor: Anchor.center,
-    );
-    add(hackerMessage);
 
     // Wait for dramatic effect (show for 3 seconds)
     await Future.delayed(Duration(milliseconds: 3000));
@@ -374,7 +374,6 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
     // Remove all intro elements with a fade-out effect using opacity on paint
     _fadeOutAndRemove(overlay, 0.8);
     _fadeOutAndRemove(hackerImage, 0.8);
-    _fadeOutAndRemove(hackerMessage, 0.8);
 
     // Wait for fade out to complete before continuing
     await Future.delayed(Duration(milliseconds: 800));
@@ -420,10 +419,158 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
   }
 
   void _activatePowerApp() {
-    // Find and activate the Power App (index 5)
-    if (appIcons.length > 5) {
-      appIcons[5].startPulsing();
-    }
+    // Show iOS notification instead of pulsing
+    _showIOSNotification();
+  }
+
+  void _showIOSNotification() {
+    final screenWidth = 1920.0;
+    final notificationWidth = 800.0;
+    final notificationHeight = 180.0;
+
+    // Create notification container
+    final notification = _IOSNotification(
+      position: Vector2(
+        (screenWidth - notificationWidth) / 2,
+        -notificationHeight,
+      ),
+      size: Vector2(notificationWidth, notificationHeight),
+    );
+    add(notification);
+
+    // Animate notification sliding down
+    notification.add(
+      MoveEffect.to(
+        Vector2((screenWidth - notificationWidth) / 2, 160),
+        EffectController(duration: 0.5, curve: Curves.easeOut),
+      ),
+    );
+
+    // Auto-dismiss after 8 seconds with slide up animation
+    add(
+      TimerComponent(
+        period: 8.0,
+        repeat: false,
+        onTick: () {
+          notification.add(
+            MoveEffect.to(
+              Vector2(
+                (screenWidth - notificationWidth) / 2,
+                -notificationHeight,
+              ),
+              EffectController(duration: 0.4, curve: Curves.easeIn),
+              onComplete: () => notification.removeFromParent(),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// iOS-style notification component
+class _IOSNotification extends PositionComponent {
+  _IOSNotification({required Vector2 position, required Vector2 size})
+    : super(position: position, size: size);
+
+  @override
+  Future<void> onLoad() async {
+    // Semi-transparent dark background with blur effect
+    final background = RectangleComponent(
+      size: size,
+      paint: Paint()..color = Color(0xEE1C1C1E),
+    );
+    add(background);
+
+    // Icon circle on the left
+    final iconCircle = CircleComponent(
+      radius: 30,
+      position: Vector2(60, size.y / 2),
+      anchor: Anchor.center,
+      paint: Paint()..color = Color(0xFFFF0000),
+    );
+    add(iconCircle);
+
+    // Warning icon
+    add(
+      TextComponent(
+        text: '⚠',
+        textRenderer: TextPaint(
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        position: Vector2(60, size.y / 2),
+        anchor: Anchor.center,
+      ),
+    );
+
+    // App title
+    add(
+      TextComponent(
+        text: 'SECURITY ALERT',
+        textRenderer: TextPaint(
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        position: Vector2(120, size.y / 2 - 30),
+        anchor: Anchor.centerLeft,
+      ),
+    );
+
+    // Notification message
+    add(
+      TextComponent(
+        text: 'Tap the Power app to restore system access',
+        textRenderer: TextPaint(
+          style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 22),
+        ),
+        position: Vector2(120, size.y / 2 + 15),
+        anchor: Anchor.centerLeft,
+      ),
+    );
+
+    // Time indicator
+    add(
+      TextComponent(
+        text: 'now',
+        textRenderer: TextPaint(
+          style: TextStyle(color: Color(0xFF888888), fontSize: 20),
+        ),
+        position: Vector2(size.x - 30, 30),
+        anchor: Anchor.topRight,
+      ),
+    );
+  }
+
+  @override
+  void render(Canvas canvas) {
+    // Draw rounded rectangle background
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size.toSize(),
+      Radius.circular(20),
+    );
+
+    final paint = Paint()
+      ..color = Color(0xEE1C1C1E)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRRect(rrect, paint);
+
+    // Draw subtle border
+    final borderPaint = Paint()
+      ..color = Color(0x33FFFFFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    canvas.drawRRect(rrect, borderPaint);
+
+    super.render(canvas);
   }
 }
 
@@ -449,7 +596,7 @@ class _HackedAppIcon extends PositionComponent
     // Dark icon container
     add(
       _DarkRoundedIconContainer(
-        position: Vector2.zero(),
+        position: Vector2(iconSize / 2, iconSize / 2),
         size: Vector2(iconSize, iconSize),
         borderRadius: 24,
         isActive: isActive,
@@ -563,7 +710,7 @@ class _DarkRoundedIconContainer extends PositionComponent {
     required Vector2 position,
     required this.borderRadius,
     required this.isActive,
-  }) : super(size: size, position: position);
+  }) : super(size: size, position: position, anchor: Anchor.center);
 
   void startGlowPulse() {
     // Pulse the glow intensity
@@ -582,45 +729,6 @@ class _DarkRoundedIconContainer extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
-    final bgPaint = Paint()
-      ..color = Color(0xFF1A1A1A)
-      ..style = PaintingStyle.fill;
-
-    final rrect = RRect.fromRectAndRadius(
-      Offset.zero & size.toSize(),
-      Radius.circular(borderRadius),
-    );
-
-    // Draw background
-    canvas.drawRRect(rrect, bgPaint);
-
-    // Draw neon border if active (RED instead of green)
-    if (isActive) {
-      final borderPaint = Paint()
-        ..color = Color(0xFFFF0000)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4;
-
-      canvas.drawRRect(rrect, borderPaint);
-
-      // Add pulsing red glow effect
-      final glowOpacity = (0x66 * glowIntensity).toInt();
-      final glowPaint = Paint()
-        ..color = Color.fromRGBO(255, 0, 0, glowOpacity / 255)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 12
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 16 * glowIntensity);
-
-      canvas.drawRRect(rrect, glowPaint);
-
-      // Add outer glow
-      final outerGlowPaint = Paint()
-        ..color = Color.fromRGBO(255, 0, 0, (glowOpacity / 2) / 255)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 20
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 24 * glowIntensity);
-
-      canvas.drawRRect(rrect, outerGlowPaint);
-    }
+    // No border or glow since we're using notification instead
   }
 }

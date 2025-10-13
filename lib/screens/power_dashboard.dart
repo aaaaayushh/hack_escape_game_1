@@ -5,7 +5,7 @@ import 'package:hack_game/hack_game.dart';
 
 class PowerDashboard extends World with HasGameReference<HackGame> {
   late TextComponent timerDisplay;
-  int remainingTime = 120;
+  int elapsedTime = 0;
   List<_PowerPanel> panels = [];
 
   PowerDashboard();
@@ -40,19 +40,35 @@ class PowerDashboard extends World with HasGameReference<HackGame> {
   }
 
   void _addHeader(double screenWidth) {
-    // Time display (top left)
-    add(
-      TextComponent(
-        text: '08:41',
-        textRenderer: TextPaint(
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 32,
-            fontWeight: FontWeight.w400,
-          ),
+    // Time display (top left) - real time
+    final now = DateTime.now();
+    final timeString =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+    final timeDisplay = TextComponent(
+      text: timeString,
+      textRenderer: TextPaint(
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 32,
+          fontWeight: FontWeight.w400,
         ),
-        position: Vector2(60, 45),
-        anchor: Anchor.centerLeft,
+      ),
+      position: Vector2(60, 45),
+      anchor: Anchor.centerLeft,
+    );
+    add(timeDisplay);
+
+    // Update time every minute
+    add(
+      TimerComponent(
+        period: 60.0,
+        repeat: true,
+        onTick: () {
+          final now = DateTime.now();
+          timeDisplay.text =
+              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+        },
       ),
     );
 
@@ -74,7 +90,7 @@ class PowerDashboard extends World with HasGameReference<HackGame> {
 
     // Countdown timer (top right)
     timerDisplay = TextComponent(
-      text: '$remainingTime',
+      text: '0:00',
       textRenderer: TextPaint(
         style: TextStyle(
           color: Color(0xFFFF6B35),
@@ -90,7 +106,7 @@ class PowerDashboard extends World with HasGameReference<HackGame> {
     // Battery/timer icon
     add(
       TextComponent(
-        text: '🔋',
+        text: '⏱',
         textRenderer: TextPaint(
           style: TextStyle(color: Color(0xFFFF6B35), fontSize: 32),
         ),
@@ -215,34 +231,26 @@ class PowerDashboard extends World with HasGameReference<HackGame> {
         period: 1.0,
         repeat: true,
         onTick: () {
-          if (remainingTime > 0) {
-            remainingTime--;
-            timerDisplay.text = '$remainingTime';
+          elapsedTime++;
+          final minutes = elapsedTime ~/ 60;
+          final seconds = elapsedTime % 60;
+          timerDisplay.text = '$minutes:${seconds.toString().padLeft(2, '0')}';
 
-            // Change color as time runs out
-            if (remainingTime <= 30) {
-              final textPaint = timerDisplay.textRenderer as TextPaint;
-              timerDisplay.textRenderer = TextPaint(
-                style: textPaint.style.copyWith(color: Color(0xFFFF0000)),
-              );
-            } else if (remainingTime <= 60) {
-              final textPaint = timerDisplay.textRenderer as TextPaint;
-              timerDisplay.textRenderer = TextPaint(
-                style: textPaint.style.copyWith(color: Color(0xFFFF8C42)),
-              );
-            }
-          } else {
-            // Time's up - game over or consequences
-            _handleTimeout();
+          // Change color as time goes on
+          if (elapsedTime >= 90) {
+            final textPaint = timerDisplay.textRenderer as TextPaint;
+            timerDisplay.textRenderer = TextPaint(
+              style: textPaint.style.copyWith(color: Color(0xFFFF0000)),
+            );
+          } else if (elapsedTime >= 60) {
+            final textPaint = timerDisplay.textRenderer as TextPaint;
+            timerDisplay.textRenderer = TextPaint(
+              style: textPaint.style.copyWith(color: Color(0xFFFF8C42)),
+            );
           }
         },
       ),
     );
-  }
-
-  void _handleTimeout() {
-    // TODO: Handle timeout - transition to game over or consequences
-    print('Time\'s up! Game over.');
   }
 }
 
