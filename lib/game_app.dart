@@ -23,22 +23,41 @@ class _GameAppState extends State<GameApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.black,
         body: SafeArea(
-          child: FittedBox(
-            child: SizedBox(
-              width: 1920,
-              height: 1080,
-              child: Center(
-                child: GameWidget(
-                  game: _game,
-                  overlayBuilderMap: {
-                    'textInput': (context, game) =>
-                        _TextInputOverlay(game: _game),
-                  },
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Calculate the aspect ratio and scale accordingly
+              final screenWidth = constraints.maxWidth;
+              final screenHeight = constraints.maxHeight;
+              final gameAspectRatio = 1920.0 / 1080.0;
+              final screenAspectRatio = screenWidth / screenHeight;
+
+              double gameWidth, gameHeight;
+              if (screenAspectRatio > gameAspectRatio) {
+                // Screen is wider than game - fit to height
+                gameHeight = screenHeight;
+                gameWidth = screenHeight * gameAspectRatio;
+              } else {
+                // Screen is taller than game - fit to width
+                gameWidth = screenWidth;
+                gameHeight = screenWidth / gameAspectRatio;
+              }
+
+              return Center(
+                child: SizedBox(
+                  width: gameWidth,
+                  height: gameHeight,
+                  child: GameWidget(
+                    game: _game,
+                    overlayBuilderMap: {
+                      'textInput': (context, game) =>
+                          _TextInputOverlay(game: _game),
+                    },
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
       ),
@@ -79,7 +98,7 @@ class _TextInputOverlayState extends State<_TextInputOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the screen dimensions - game is 1920x1080
+    // Get the screen dimensions - responsive to actual screen size
     // Input box dimensions from loading_screen.dart
     final inputBoxWidth = 600.0;
     final inputBoxHeight = 80.0;
@@ -97,69 +116,85 @@ class _TextInputOverlayState extends State<_TextInputOverlay> {
       child: Container(
         color: Colors.transparent,
         child: Center(
-          child: FittedBox(
-            child: SizedBox(
-              width: 1920,
-              height: 1080,
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: (1920 - inputBoxWidth) / 2,
-                    top: _calculateInputBoxY(),
-                    width: inputBoxWidth,
-                    height: inputBoxHeight,
-                    child: GestureDetector(
-                      onTap: () {}, // Prevent closing when clicking on input
-                      child: TextField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        style: TextStyle(
-                          color: Color(0xFF6DC5D9),
-                          fontSize: 28,
-                          fontFamily: 'Consolas',
-                          fontFamilyFallback: ['Courier New', 'monospace'],
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Enter company code...',
-                          hintStyle: TextStyle(
-                            color: Color(0x806DC5D9),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final screenWidth = constraints.maxWidth;
+              final screenHeight = constraints.maxHeight;
+              final gameAspectRatio = 1920.0 / 1080.0;
+              final screenAspectRatio = screenWidth / screenHeight;
+
+              double gameWidth, gameHeight;
+              if (screenAspectRatio > gameAspectRatio) {
+                gameHeight = screenHeight;
+                gameWidth = screenHeight * gameAspectRatio;
+              } else {
+                gameWidth = screenWidth;
+                gameHeight = screenWidth / gameAspectRatio;
+              }
+
+              return SizedBox(
+                width: gameWidth,
+                height: gameHeight,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: (gameWidth - inputBoxWidth) / 2,
+                      top: _calculateInputBoxY(gameHeight),
+                      width: inputBoxWidth,
+                      height: inputBoxHeight,
+                      child: GestureDetector(
+                        onTap: () {}, // Prevent closing when clicking on input
+                        child: TextField(
+                          controller: _controller,
+                          focusNode: _focusNode,
+                          style: TextStyle(
+                            color: Color(0xFF6DC5D9),
                             fontSize: 28,
                             fontFamily: 'Consolas',
                             fontFamilyFallback: ['Courier New', 'monospace'],
                           ),
-                          filled: true,
-                          fillColor: Colors.transparent,
-                          contentPadding: EdgeInsets.only(left: 20, top: 20),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
+                          decoration: InputDecoration(
+                            hintText: 'Enter company code...',
+                            hintStyle: TextStyle(
+                              color: Color(0x806DC5D9),
+                              fontSize: 28,
+                              fontFamily: 'Consolas',
+                              fontFamilyFallback: ['Courier New', 'monospace'],
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            contentPadding: EdgeInsets.only(left: 20, top: 20),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                          ),
+                          onChanged: (value) {
+                            widget.game.loadingScreen.updateInputText(value);
+                          },
+                          onSubmitted: (value) {
+                            final inputText = _controller.text.trim();
+                            if (inputText.isNotEmpty) {
+                              widget.game.loadingScreen.updateInputText(
+                                inputText,
+                              );
+                            }
+                            widget.game.loadingScreen.unfocusInput();
+                            widget.game.overlays.remove('textInput');
+                          },
                         ),
-                        onChanged: (value) {
-                          widget.game.loadingScreen.updateInputText(value);
-                        },
-                        onSubmitted: (value) {
-                          final inputText = _controller.text.trim();
-                          if (inputText.isNotEmpty) {
-                            widget.game.loadingScreen.updateInputText(
-                              inputText,
-                            );
-                          }
-                          widget.game.loadingScreen.unfocusInput();
-                          widget.game.overlays.remove('textInput');
-                        },
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  double _calculateInputBoxY() {
+  double _calculateInputBoxY(double gameHeight) {
     // These values match loading_screen.dart calculations
     final logoBoxHeight = 480.0; // 400 + 40*2
     final spaceBetweenLogoAndText = 80.0;
@@ -177,7 +212,7 @@ class _TextInputOverlayState extends State<_TextInputOverlay> {
         spaceBetweenInputAndButton +
         buttonHeight;
 
-    final startY = (1080 - totalHeight) / 2;
+    final startY = (gameHeight - totalHeight) / 2;
     final logoBoxY = startY;
     final companyLoginTextY =
         logoBoxY + logoBoxHeight + spaceBetweenLogoAndText;

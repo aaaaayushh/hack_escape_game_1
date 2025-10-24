@@ -2,6 +2,8 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:hack_game/hack_game.dart';
+import 'package:hack_game/components/ui/fadable_rectangle.dart';
+import 'package:hack_game/ui/constants.dart';
 
 class LoadingScreen extends World with HasGameReference<HackGame> {
   LoadingScreen();
@@ -20,8 +22,8 @@ class LoadingScreen extends World with HasGameReference<HackGame> {
 
   @override
   Future<void> onLoad() async {
-    final screenWidth = 1920.0;
-    final screenHeight = 1080.0;
+    final screenWidth = game.size.x;
+    final screenHeight = game.size.y;
 
     // Add background image (same as splash screen)
     final background = SpriteComponent(
@@ -64,18 +66,18 @@ class LoadingScreen extends World with HasGameReference<HackGame> {
     final logoBoxY = startY;
 
     // Create semi-transparent box behind logo (same as splash screen)
-    final logoBoxRect = _FadableRectangle(
+    final logoBoxRect = FadableRectangle(
       position: Vector2((screenWidth - logoBoxWidth) / 2, logoBoxY),
       size: Vector2(logoBoxWidth, logoBoxHeight),
-      color: Color(0x990F1F30), // 60% opacity
+      color: const Color(0x990F1F30),
       isFilled: true,
     );
 
     // Create outline for the logo box
-    final logoBoxOutline = _FadableRectangle(
+    final logoBoxOutline = FadableRectangle(
       position: Vector2((screenWidth - logoBoxWidth) / 2, logoBoxY),
       size: Vector2(logoBoxWidth, logoBoxHeight),
-      color: Color(0xFF6DC5D9), // #6DC5D9
+      color: UiColors.brandTeal,
       isFilled: false,
       strokeWidth: 3.0,
     );
@@ -101,11 +103,11 @@ class LoadingScreen extends World with HasGameReference<HackGame> {
       text: 'Company Login',
       textRenderer: TextPaint(
         style: TextStyle(
-          color: Color(0xFF6DC5D9),
+          color: UiColors.brandTeal,
           fontSize: 36,
           fontWeight: FontWeight.bold,
-          fontFamily: 'Consolas',
-          fontFamilyFallback: ['Courier New', 'monospace'],
+          fontFamily: UiFonts.monoPrimary,
+          fontFamilyFallback: UiFonts.monoFallback,
         ),
       ),
       position: Vector2(screenWidth / 2, companyLoginTextY),
@@ -147,32 +149,7 @@ class LoadingScreen extends World with HasGameReference<HackGame> {
   }
 }
 
-class _FadableRectangle extends PositionComponent {
-  final Color color;
-  final bool isFilled;
-  final double strokeWidth;
-
-  _FadableRectangle({
-    required Vector2 position,
-    required Vector2 size,
-    required this.color,
-    this.isFilled = true,
-    this.strokeWidth = 1.0,
-  }) : super(position: position, size: size);
-
-  @override
-  void render(Canvas canvas) {
-    final paint = Paint()
-      ..color = color
-      ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke;
-
-    if (!isFilled) {
-      paint.strokeWidth = strokeWidth;
-    }
-
-    canvas.drawRect(size.toRect(), paint);
-  }
-}
+// _FadableRectangle removed in favor of shared FadableRectangle component
 
 class _InputBoxComponent extends PositionComponent with TapCallbacks {
   final HackGame game;

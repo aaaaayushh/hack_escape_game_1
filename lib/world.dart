@@ -8,9 +8,9 @@ class Level extends World with HasGameReference<HackGame> {
 
   @override
   Future<void> onLoad() async {
-    // Make this constants
-    final screenWidth = 1920;
-    final screenHeight = 1080;
+    // Use actual game screen dimensions
+    final screenWidth = game.size.x;
+    final screenHeight = game.size.y;
     // ---
 
     final rowNoIcons = 3;

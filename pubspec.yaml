@@ -46,6 +46,18 @@ flutter:
     - assets/images/Background after hack.png
     - assets/images/escape_the hack_logo.png
     - assets/images/splash_background.png
+    - assets/images/phase0_icons/weather.png
+    - assets/images/phase0_icons/calendar.png
+    - assets/images/background_basescreen.png
+    - assets/images/phase0_icons/wifi_white.png
+    - assets/images/phase0_icons/battery_white.png
+    - assets/images/phase0_icons/connection_white.png
+    - assets/images/phase0_icons/wifi_black.png
+    - assets/images/phase0_icons/battery_black.png
+    - assets/images/phase0_icons/connection_black.png
+    - assets/images/phase0_icons/hacker_background.png
+    - assets/images/phase0_icons/afterhack_weather.png
+    - assets/images/phase0_icons/afterhack_calendar.png
   #   - images/a_dot_ham.jpeg
   #
 

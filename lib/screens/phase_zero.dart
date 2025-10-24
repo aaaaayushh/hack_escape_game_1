@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
 import 'package:hack_game/hack_game.dart';
+import 'package:hack_game/components/ui/status_bar.dart';
+import 'package:hack_game/components/ui/ios_notification.dart';
 
 class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
   PhaseZero();
@@ -12,37 +15,36 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
 
   @override
   Future<void> onLoad() async {
-    final screenWidth = 1920.0;
-    final screenHeight = 1080.0;
+    final screenWidth = game.size.x;
+    final screenHeight = game.size.y;
 
-    // White background
-    final background = RectangleComponent(
-      size: Vector2(screenWidth, screenHeight),
-      position: Vector2(0, 0),
-      paint: Paint()..color = Color(0xFFF5F5F5),
+    // Background image
+    add(
+      SpriteComponent(
+        sprite: Sprite(game.images.fromCache('background_basescreen.png')),
+        size: Vector2(screenWidth, screenHeight),
+        position: Vector2(0, 0),
+      ),
     );
-    add(background);
 
     // Status bar at top
-    _addStatusBar(screenWidth);
-
-    // Hospital logo/wallpaper text (centered upper area) - uses dynamic company name
-    companyNameText = TextComponent(
-      text: 'Company Name', // Will be updated in startSequence
-      textRenderer: TextPaint(
-        style: TextStyle(
-          color: Color(0xFFB0BEC5),
-          fontSize: 56,
-          fontWeight: FontWeight.w300,
-          letterSpacing: 3,
-        ),
+    add(
+      StatusBar(
+        screenWidth: screenWidth,
+        y: 45,
+        timeColor: const Color(0xFFFFFFFF),
+        centerTime: false,
+        showWifiBattery: true,
       ),
-      position: Vector2(screenWidth / 2, 200),
-      anchor: Anchor.center,
     );
-    add(companyNameText);
 
-    // App grid - 2 rows, 4 columns
+    // Prepare company name for later update (not shown on this screen)
+    companyNameText = TextComponent(text: '');
+
+    // Left-side info panels (static images for now)
+    _addLeftInfoPanels(screenWidth, screenHeight);
+
+    // App grid - 2 rows, 4 columns, aligned to the right
     _addAppGrid(screenWidth, screenHeight);
   }
 
@@ -53,10 +55,13 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
     // Update the company name text with the value entered by user
     companyNameText.text = game.companyName;
 
-    // Trigger hack transition after a few seconds
+    // Show notifications before transition
+    _showNotifications();
+
+    // Trigger hack transition after notifications
     add(
       TimerComponent(
-        period: 5.0,
+        period: 8.0,
         repeat: false,
         onTick: () {
           if (!hasTransitioned) {
@@ -69,65 +74,148 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
 
   void _triggerHackTransition() {
     hasTransitioned = true;
-    game.cam.world = game.phaseOne;
-    // Start the sequence for phase one
-    game.phaseOne.startSequence();
+    // Transition to splash screen, which will then go to phase one
+    game.cam.world = game.splashScreen;
+    game.splashScreen.prepareForTransitionToPhaseOne();
   }
 
-  void _addStatusBar(double screenWidth) {
-    // Time display - real time
-    final now = DateTime.now();
-    final timeString =
-        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+  void _showNotifications() {
+    final screenWidth = game.size.x;
+    final notificationWidth = 900.0;
+    final notificationHeight = 140.0;
+    final startY = 100.0;
+    final spacing = 20.0;
 
-    final timeDisplay = TextComponent(
-      text: timeString,
-      textRenderer: TextPaint(
-        style: TextStyle(
-          color: Color(0xFF1A1A1A),
-          fontSize: 40,
-          fontWeight: FontWeight.w500,
-        ),
+    // Notification 1: Technical Services - System Alert
+    final notification1 = IOSNotification(
+      position: Vector2(
+        (screenWidth - notificationWidth) / 2,
+        -notificationHeight,
       ),
-      position: Vector2(screenWidth / 2, 45),
-      anchor: Anchor.center,
+      size: Vector2(notificationWidth, notificationHeight),
+      title: 'Technical Services - System Alert',
+      message:
+          'Network latency detected in several hospital systems. IT is investigating possible connection issues.',
+      timeLabel: 'now',
+      accentColor: const Color(0xFF007AFF),
+      iconEmoji: '💻',
+      backgroundColor: const Color(0xEEF5F5F5),
+      titleColor: const Color(0xFF1A1A1A),
+      messageColor: const Color(0xFF666666),
     );
-    add(timeDisplay);
+    add(notification1);
 
-    // Update time every minute
+    // Animate notification 1 sliding down
+    notification1.add(
+      MoveEffect.to(
+        Vector2((screenWidth - notificationWidth) / 2, startY),
+        EffectController(duration: 0.5, curve: Curves.easeOut),
+      ),
+    );
+
+    // Notification 2: Security threat emerging (delayed)
     add(
       TimerComponent(
-        period: 60.0,
-        repeat: true,
+        period: 1.5,
+        repeat: false,
         onTick: () {
-          final now = DateTime.now();
-          timeDisplay.text =
-              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+          final notification2 = IOSNotification(
+            position: Vector2(
+              (screenWidth - notificationWidth) / 2,
+              -notificationHeight,
+            ),
+            size: Vector2(notificationWidth, notificationHeight),
+            title: 'Security threat emerging',
+            message:
+                "We're receiving unusual login attempts to your account. Please check your verification.",
+            timeLabel: 'now',
+            accentColor: const Color(0xFF007AFF),
+            iconEmoji: '✉',
+            backgroundColor: const Color(0xEEF5F5F5),
+            titleColor: const Color(0xFF1A1A1A),
+            messageColor: const Color(0xFF666666),
+          );
+          add(notification2);
+
+          notification2.add(
+            MoveEffect.to(
+              Vector2(
+                (screenWidth - notificationWidth) / 2,
+                startY + notificationHeight + spacing,
+              ),
+              EffectController(duration: 0.5, curve: Curves.easeOut),
+            ),
+          );
+
+          // Notification 3: MedNews24 - Live Update (delayed further)
+          add(
+            TimerComponent(
+              period: 1.5,
+              repeat: false,
+              onTick: () {
+                final notification3 = IOSNotification(
+                  position: Vector2(
+                    (screenWidth - notificationWidth) / 2,
+                    -notificationHeight,
+                  ),
+                  size: Vector2(notificationWidth, notificationHeight),
+                  title: 'MedNews24 - Live Update',
+                  message:
+                      'Breaking: Hospitals in the region report temporary IT disruptions. No cause identified yet. Patient care is affected.',
+                  timeLabel: 'now',
+                  accentColor: const Color(0xFFFF3B30),
+                  iconEmoji: '📰',
+                  backgroundColor: const Color(0xEEF5F5F5),
+                  titleColor: const Color(0xFF1A1A1A),
+                  messageColor: const Color(0xFF666666),
+                );
+                add(notification3);
+
+                notification3.add(
+                  MoveEffect.to(
+                    Vector2(
+                      (screenWidth - notificationWidth) / 2,
+                      startY + (notificationHeight + spacing) * 2,
+                    ),
+                    EffectController(duration: 0.5, curve: Curves.easeOut),
+                  ),
+                );
+              },
+            ),
+          );
         },
       ),
     );
+  }
 
-    // WiFi icon (right side - using text representation)
+  // Legacy placeholder removed; StatusBar is added directly in onLoad
+
+  void _addLeftInfoPanels(double screenWidth, double screenHeight) {
+    // Sizes tuned to closely match the reference
+    final leftPadding = 120.0;
+    final topStart = 200.0;
+
+    // Weather card
+    // Reduced sizes to remove blur
+    const weatherWidth = 560.0;
+    const weatherHeight = 390.0;
     add(
-      TextComponent(
-        text: '📶',
-        textRenderer: TextPaint(
-          style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 36),
-        ),
-        position: Vector2(screenWidth - 150, 40),
-        anchor: Anchor.center,
+      SpriteComponent(
+        sprite: Sprite(game.images.fromCache('phase0_icons/weather.png')),
+        size: Vector2(weatherWidth, weatherHeight),
+        position: Vector2(leftPadding, topStart),
       ),
     );
 
-    // Battery icon (far right - using text representation)
+    // Calendar card (static)
+    const calendarWidth = weatherWidth;
+    const calendarHeight = 220.0;
+    const verticalGap = 28.0;
     add(
-      TextComponent(
-        text: '🔋',
-        textRenderer: TextPaint(
-          style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 36),
-        ),
-        position: Vector2(screenWidth - 80, 40),
-        anchor: Anchor.center,
+      SpriteComponent(
+        sprite: Sprite(game.images.fromCache('phase0_icons/calendar.png')),
+        size: Vector2(calendarWidth, calendarHeight),
+        position: Vector2(leftPadding, topStart + weatherHeight + verticalGap),
       ),
     );
   }
@@ -147,15 +235,32 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
       {'name': 'Pager', 'icon': 'phase0_icons/pager.png'},
     ];
 
-    final iconSize = 280.0;
-    final iconSpacing = 120.0;
+    // Reserve space for the left weather + calendar panels
+    const leftPadding = 120.0;
+    const weatherWidth = 560.0;
+    const gapRightOfPanels = 100.0;
+    const rightPadding = 140.0;
 
-    // Calculate grid positioning (centered on screen)
+    final availableRightWidth =
+        screenWidth -
+        (leftPadding + weatherWidth + gapRightOfPanels) -
+        rightPadding;
+
+    // Compute icon size to fit 4 columns with spacing, with reasonable clamps
+    const minIconSize = 150.0;
+    const maxIconSize = 210.0;
+    const iconSpacing = 76.0;
+    final computedIconSize = (availableRightWidth - (3 * iconSpacing)) / 4.0;
+    final iconSize = computedIconSize.clamp(minIconSize, maxIconSize);
+
+    // Calculate grid positioning (flush-right within the available area)
     final gridWidth = (iconSize * 4) + (iconSpacing * 3);
-    final gridHeight =
-        (iconSize * 2) + (iconSpacing * 1) + 120; // Extra space for labels
-    final startX = (screenWidth - gridWidth) / 2;
-    final startY = (screenHeight - gridHeight) / 2 + 60; // Offset down a bit
+    final startX = screenWidth - rightPadding - gridWidth;
+    final gridHeight = (iconSize * 2) + iconSpacing + 120;
+    final startY = ((screenHeight - gridHeight) / 2).clamp(
+      140.0,
+      double.infinity,
+    );
 
     for (int i = 0; i < apps.length; i++) {
       final row = i ~/ 4;
@@ -184,8 +289,9 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
     try {
       final iconSprite = SpriteComponent(
         sprite: Sprite(game.images.fromCache(iconAsset)),
-        size: Vector2(size * 0.6, size * 0.6),
-        position: position + Vector2(size * 0.2, size * 0.2),
+        size: Vector2(size, size),
+        position: position + Vector2(size / 2, size / 2),
+        anchor: Anchor.center,
       );
       add(iconSprite);
     } catch (e) {
@@ -222,7 +328,7 @@ class PhaseZero extends World with HasGameReference<HackGame>, TapCallbacks {
         text: appName,
         textRenderer: TextPaint(
           style: TextStyle(
-            color: Color(0xFF1A1A1A),
+            color: const Color(0xFF1A1A1A),
             fontSize: 32,
             fontWeight: FontWeight.w500,
           ),

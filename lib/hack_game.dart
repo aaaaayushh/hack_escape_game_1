@@ -44,8 +44,8 @@ class HackGame extends FlameGame {
 
     cam = CameraComponent.withFixedResolution(
       world: splashScreen,
-      width: 1920,
-      height: 1080,
+      width: size.x,
+      height: size.y,
     );
 
     cam.viewfinder.anchor = Anchor.topLeft;

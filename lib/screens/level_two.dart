@@ -39,8 +39,8 @@ class LevelTwo extends World with HasGameReference {
 
     PositionComponent theMainScreen = PositionComponent();
 
-    final screenWidth = 1920;
-    final screenHeight = 1080;
+    final screenWidth = game.size.x;
+    final screenHeight = game.size.y;
     int rowNoIcons = 4;
     int colNoIcons = 2;
     double iconSize = 200;
@@ -113,7 +113,7 @@ class LevelTwo extends World with HasGameReference {
       RowComponent(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
-        size: Vector2(1920, 175),
+        size: Vector2(screenWidth, 175),
         children: [panel],
       ),
     );

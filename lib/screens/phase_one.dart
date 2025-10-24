@@ -4,11 +4,13 @@ import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:hack_game/hack_game.dart';
+import 'package:hack_game/components/ui/warning_banner.dart';
+import 'package:hack_game/components/ui/ios_notification.dart';
+import 'package:hack_game/ui/constants.dart';
 
 class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
-  late RectangleComponent background;
-  late TextComponent hospitalLogo;
-  late List<_HackedAppIcon> appIcons;
+  late SpriteComponent _background;
+  late List<_HackedAppIcon> _appIcons;
   bool isTransitioning = false;
   bool hasStarted = false;
 
@@ -16,40 +18,45 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
 
   @override
   Future<void> onLoad() async {
-    final screenWidth = 1920.0;
-    final screenHeight = 1080.0;
+    final screenWidth = game.size.x;
+    final screenHeight = game.size.y;
 
-    // Dark background (will transition from white)
-    background = RectangleComponent(
+    // Hacker background with binary code pattern
+    _background = SpriteComponent(
+      sprite: Sprite(
+        game.images.fromCache('phase0_icons/hacker_background.png'),
+      ),
       size: Vector2(screenWidth, screenHeight),
       position: Vector2(0, 0),
-      paint: Paint()..color = Color(0xFF0A0A0A),
     );
-    add(background);
+    add(_background);
 
-    // Status bar at top
-    _addStatusBar(screenWidth);
+    // Status bar at top with cyan color scheme (fixed time to match image)
+    add(
+      _FixedTimeStatusBar(
+        screenWidth: screenWidth,
+        y: 45,
+        timeColor: UiColors.brandTeal,
+        centerTime: true,
+        showWifiBattery: true,
+      ),
+    );
 
     // Add flashing warning banner
-    _addWarningBanner(screenWidth);
-
-    // Hospital logo (will be glitched)
-    hospitalLogo = TextComponent(
-      text: 'St. Aegis Medical',
-      textRenderer: TextPaint(
-        style: TextStyle(
-          color: Color(0xFF8EC4BB),
-          fontSize: 56,
-          fontWeight: FontWeight.w300,
-          letterSpacing: 3,
-        ),
+    add(
+      WarningBanner(
+        position: Vector2(0, 90),
+        size: Vector2(screenWidth, 60),
+        message: 'SYSTEM BREACH - Unauthorized Access Detected',
+        color: UiColors.warnRed,
+        flash: true,
       ),
-      position: Vector2(screenWidth / 2, 200),
-      anchor: Anchor.center,
     );
-    add(hospitalLogo);
 
-    // Add hacked app grid
+    // Left-side error panels (weather + calendar in error state)
+    _addLeftErrorPanels(screenWidth, screenHeight);
+
+    // Add hacked app grid on the right in a similar layout to Phase Zero
     await _addHackedAppGrid(screenWidth, screenHeight);
   }
 
@@ -69,143 +76,15 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
     );
   }
 
-  void _addStatusBar(double screenWidth) {
-    // Time display - real time (glitched color)
-    final now = DateTime.now();
-    final timeString =
-        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+  // Legacy placeholder removed; StatusBar is added directly in onLoad
 
-    final timeDisplay = TextComponent(
-      text: timeString,
-      textRenderer: TextPaint(
-        style: TextStyle(
-          color: Color(0xFF8EC4BB),
-          fontSize: 40,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      position: Vector2(screenWidth / 2, 45),
-      anchor: Anchor.center,
-    );
-    add(timeDisplay);
-
-    // Update time every minute
-    add(
-      TimerComponent(
-        period: 60.0,
-        repeat: true,
-        onTick: () {
-          final now = DateTime.now();
-          timeDisplay.text =
-              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-        },
-      ),
-    );
-
-    // WiFi icon (glitched - red/warning)
-    add(
-      TextComponent(
-        text: '⚠️',
-        textRenderer: TextPaint(
-          style: TextStyle(color: Color(0xFFFF3333), fontSize: 36),
-        ),
-        position: Vector2(screenWidth - 150, 40),
-        anchor: Anchor.center,
-      ),
-    );
-
-    // Battery icon (warning)
-    add(
-      TextComponent(
-        text: '🔋',
-        textRenderer: TextPaint(
-          style: TextStyle(color: Color(0xFFFF3333), fontSize: 36),
-        ),
-        position: Vector2(screenWidth - 80, 40),
-        anchor: Anchor.center,
-      ),
-    );
-  }
-
-  void _addWarningBanner(double screenWidth) {
-    // Warning background bar
-    final warningBar = RectangleComponent(
-      size: Vector2(screenWidth, 60),
-      position: Vector2(0, 90),
-      paint: Paint()..color = Color(0xFFFF0000).withOpacity(0.2),
-    );
-    add(warningBar);
-
-    // Warning icon
-    final warningIcon = TextComponent(
-      text: '⚠',
-      textRenderer: TextPaint(
-        style: TextStyle(
-          color: Color(0xFFFF0000),
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      position: Vector2(screenWidth / 2 - 420, 120),
-      anchor: Anchor.center,
-    );
-    add(warningIcon);
-
-    // Warning text
-    final warningText = TextComponent(
-      text: 'SYSTEM BREACH - Unauthorized Access Detected',
-      textRenderer: TextPaint(
-        style: TextStyle(
-          color: Color(0xFFFF0000),
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 2,
-        ),
-      ),
-      position: Vector2(screenWidth / 2 + 50, 120),
-      anchor: Anchor.center,
-    );
-    add(warningText);
-
-    // Add flashing effect to warning text
-    bool isVisible = true;
-    add(
-      TimerComponent(
-        period: 0.6,
-        repeat: true,
-        onTick: () {
-          isVisible = !isVisible;
-          final newOpacity = isVisible ? 1.0 : 0.3;
-
-          final textPaint = warningText.textRenderer;
-          warningText.textRenderer = TextPaint(
-            style: textPaint.style.copyWith(
-              color: Color(0xFFFF0000).withOpacity(newOpacity),
-            ),
-          );
-
-          // Also flash the icon
-          final iconPaint = warningIcon.textRenderer;
-          warningIcon.textRenderer = TextPaint(
-            style: iconPaint.style.copyWith(
-              color: Color(0xFFFF0000).withOpacity(newOpacity),
-            ),
-          );
-
-          // Flash the bar background
-          warningBar.paint.color = Color(
-            0xFFFF0000,
-          ).withOpacity(newOpacity * 0.3);
-        },
-      ),
-    );
-  }
+  // Legacy placeholder removed; WarningBanner is added directly in onLoad
 
   Future<void> _addHackedAppGrid(
     double screenWidth,
     double screenHeight,
   ) async {
-    // App configuration with blackout icons
+    // App configuration matching the image layout (4x2 grid)
     final apps = [
       // Row 1
       {
@@ -214,30 +93,25 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
         'active': false,
       },
       {
-        'name': 'Chat',
-        'icon': 'phase0_icons/chat_blackout.png',
+        'name': 'Documents',
+        'icon': 'phase0_icons/docs_blackout.png',
         'active': false,
       },
+      {'name': 'EPD', 'icon': 'phase0_icons/epd_blackout.png', 'active': false},
+      {
+        'name': 'Network',
+        'icon': 'phase0_icons/network_blackout.png',
+        'active': false,
+      },
+      // Row 2
       {
         'name': 'Contacts',
         'icon': 'phase0_icons/contacts_blackout.png',
         'active': false,
       },
-      {'name': 'EPD', 'icon': 'phase0_icons/epd_blackout.png', 'active': false},
-      // Row 2
       {
-        'name': 'Docs',
-        'icon': 'phase0_icons/docs_blackout.png',
-        'active': false,
-      },
-      {
-        'name': 'Power',
-        'icon': 'phase0_icons/power_blackout.png',
-        'active': true,
-      }, // Only this one is active
-      {
-        'name': 'Network\nDashboard',
-        'icon': 'phase0_icons/network_blackout.png',
+        'name': 'Chat',
+        'icon': 'phase0_icons/chat_blackout.png',
         'active': false,
       },
       {
@@ -245,18 +119,30 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
         'icon': 'phase0_icons/pager_blackout.png',
         'active': false,
       },
+      {
+        'name': 'Power',
+        'icon': 'phase0_icons/power_blackout.png',
+        'active': true,
+      }, // Only this one is active
     ];
 
-    final iconSize = 280.0;
-    final iconSpacing = 120.0;
+    // Fixed positioning for 4x2 grid layout
+    const rightPadding = 140.0;
 
-    // Calculate grid positioning
+    // Fixed icon sizing for consistent 4x2 grid layout
+    const iconSize = 160.0;
+    const iconSpacing = 80.0;
+
+    // Right-aligned grid
     final gridWidth = (iconSize * 4) + (iconSpacing * 3);
-    final gridHeight = (iconSize * 2) + (iconSpacing * 1) + 120;
-    final startX = (screenWidth - gridWidth) / 2;
-    final startY = (screenHeight - gridHeight) / 2 + 60;
+    final startX = screenWidth - rightPadding - gridWidth;
+    final gridHeight = (iconSize * 2) + iconSpacing + 120;
+    final startY = ((screenHeight - gridHeight) / 2).clamp(
+      140.0,
+      double.infinity,
+    );
 
-    appIcons = [];
+    _appIcons = [];
 
     for (int i = 0; i < apps.length; i++) {
       final row = i ~/ 4;
@@ -274,9 +160,42 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
         isActive: app['active'] as bool,
       );
 
-      appIcons.add(icon);
+      _appIcons.add(icon);
       add(icon);
     }
+  }
+
+  void _addLeftErrorPanels(double screenWidth, double screenHeight) {
+    // Layout matches the image with afterhack assets
+    final leftPadding = 120.0;
+    final topStart = 180.0;
+
+    const weatherWidth = 620.0;
+    const weatherHeight = 430.0;
+    const calendarWidth = weatherWidth;
+    const calendarHeight = 260.0;
+    const verticalGap = 36.0;
+
+    // Weather error panel with afterhack asset
+    final weatherPanel = SpriteComponent(
+      sprite: Sprite(
+        game.images.fromCache('phase0_icons/afterhack_weather.png'),
+      ),
+      size: Vector2(weatherWidth, weatherHeight),
+      position: Vector2(leftPadding, topStart),
+    );
+    add(weatherPanel);
+
+    // Calendar error panel with afterhack asset
+    final calendarTop = topStart + weatherHeight + verticalGap;
+    final calendarPanel = SpriteComponent(
+      sprite: Sprite(
+        game.images.fromCache('phase0_icons/afterhack_calendar.png'),
+      ),
+      size: Vector2(calendarWidth, calendarHeight),
+      position: Vector2(leftPadding, calendarTop),
+    );
+    add(calendarPanel);
   }
 
   Future<void> _startHackSequence() async {
@@ -300,71 +219,41 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
   Future<void> _flickerEffect() async {
     // Create rapid flicker by changing background opacity
     for (int i = 0; i < 8; i++) {
-      background.paint.color = Color(0xFFFFFFFF);
+      _background.paint.color = UiColors.brandTeal; // Cyan flash
       await Future.delayed(Duration(milliseconds: 50));
-      background.paint.color = Color(0xFF0A0A0A);
+      _background.paint.color = Color(0xFF0A0A0A); // Back to dark
       await Future.delayed(Duration(milliseconds: 100));
     }
   }
 
   void _glitchLogo() {
-    // Add shake/vibrate effect to hospital logo
-    hospitalLogo.add(
-      MoveEffect.by(
-        Vector2(10, 0),
-        EffectController(duration: 0.05, reverseDuration: 0.05, infinite: true),
-      ),
-    );
-
-    // Add color glitch effect
-    int glitchCount = 0;
-    add(
-      TimerComponent(
-        period: 0.2,
-        repeat: true,
-        onTick: () {
-          glitchCount++;
-          if (glitchCount > 10) {
-            hospitalLogo.removeAll(
-              hospitalLogo.children.whereType<MoveEffect>(),
-            );
-          } else {
-            final colors = [
-              Color(0xFF8EC4BB),
-              Color(0xFFFF3333),
-              Color(0xFF00FF00),
-              Color(0xFF8EC4BB),
-            ];
-            final style = hospitalLogo.textRenderer as TextPaint;
-            hospitalLogo.textRenderer = TextPaint(
-              style: style.style.copyWith(
-                color: colors[glitchCount % colors.length],
-              ),
-            );
-          }
-        },
-      ),
-    );
+    // Logo removed - no longer needed for the new design
+    // Keeping function for compatibility with hack sequence
   }
 
   Future<void> _showHackerIntro() async {
-    final screenWidth = 1920.0;
-    final screenHeight = 1080.0;
+    final screenWidth = game.size.x;
+    final screenHeight = game.size.y;
 
-    // Semi-transparent dark overlay
+    // Semi-transparent dark overlay with cyan tint
     final overlay = RectangleComponent(
       size: Vector2(screenWidth, screenHeight),
       position: Vector2(0, 0),
-      paint: Paint()..color = Color(0xEE000000),
+      paint: Paint()..color = Color(0xEE0A0A0A),
     );
     add(overlay);
 
-    // Hacker silhouette
+    // Hacker silhouette with cyan tint
     final hackerImage = SpriteComponent(
       sprite: Sprite(game.images.fromCache('escape_the hack_logo.png')),
       size: Vector2(700, 700),
       position: Vector2(screenWidth / 2, screenHeight / 2),
       anchor: Anchor.center,
+      paint: Paint()
+        ..colorFilter = ColorFilter.mode(
+          UiColors.brandTeal,
+          BlendMode.modulate,
+        ),
     );
     add(hackerImage);
 
@@ -393,20 +282,21 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
           final opacity = (1.0 - (currentStep / steps)).clamp(0.0, 1.0);
 
           if (component is SpriteComponent) {
-            component.paint.color = Color.fromRGBO(
-              255,
-              255,
-              255,
-              opacity.clamp(0.0, 1.0),
+            component.paint.color = UiColors.brandTeal.withValues(
+              alpha: opacity.clamp(0.0, 1.0),
             );
           } else if (component is RectangleComponent) {
             final currentColor = component.paint.color;
-            component.paint.color = currentColor.withOpacity(opacity);
+            component.paint.color = currentColor.withValues(alpha: opacity);
           } else if (component is TextComponent) {
             final textPaint = component.textRenderer as TextPaint;
             final style = textPaint.style;
             component.textRenderer = TextPaint(
-              style: style.copyWith(color: style.color?.withOpacity(opacity)),
+              style: style.copyWith(
+                color: (style.color ?? UiColors.brandTeal).withValues(
+                  alpha: opacity,
+                ),
+              ),
             );
           }
 
@@ -424,12 +314,12 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
   }
 
   void _showIOSNotification() {
-    final screenWidth = 1920.0;
+    final screenWidth = game.size.x;
     final notificationWidth = 800.0;
     final notificationHeight = 180.0;
 
     // Create notification container
-    final notification = _IOSNotification(
+    final notification = IOSNotification(
       position: Vector2(
         (screenWidth - notificationWidth) / 2,
         -notificationHeight,
@@ -468,111 +358,7 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
   }
 }
 
-// iOS-style notification component
-class _IOSNotification extends PositionComponent {
-  _IOSNotification({required Vector2 position, required Vector2 size})
-    : super(position: position, size: size);
-
-  @override
-  Future<void> onLoad() async {
-    // Semi-transparent dark background with blur effect
-    final background = RectangleComponent(
-      size: size,
-      paint: Paint()..color = Color(0xEE1C1C1E),
-    );
-    add(background);
-
-    // Icon circle on the left
-    final iconCircle = CircleComponent(
-      radius: 30,
-      position: Vector2(60, size.y / 2),
-      anchor: Anchor.center,
-      paint: Paint()..color = Color(0xFFFF0000),
-    );
-    add(iconCircle);
-
-    // Warning icon
-    add(
-      TextComponent(
-        text: '⚠',
-        textRenderer: TextPaint(
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 36,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        position: Vector2(60, size.y / 2),
-        anchor: Anchor.center,
-      ),
-    );
-
-    // App title
-    add(
-      TextComponent(
-        text: 'SECURITY ALERT',
-        textRenderer: TextPaint(
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        position: Vector2(120, size.y / 2 - 30),
-        anchor: Anchor.centerLeft,
-      ),
-    );
-
-    // Notification message
-    add(
-      TextComponent(
-        text: 'Tap the Power app to restore system access',
-        textRenderer: TextPaint(
-          style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 22),
-        ),
-        position: Vector2(120, size.y / 2 + 15),
-        anchor: Anchor.centerLeft,
-      ),
-    );
-
-    // Time indicator
-    add(
-      TextComponent(
-        text: 'now',
-        textRenderer: TextPaint(
-          style: TextStyle(color: Color(0xFF888888), fontSize: 20),
-        ),
-        position: Vector2(size.x - 30, 30),
-        anchor: Anchor.topRight,
-      ),
-    );
-  }
-
-  @override
-  void render(Canvas canvas) {
-    // Draw rounded rectangle background
-    final rrect = RRect.fromRectAndRadius(
-      Offset.zero & size.toSize(),
-      Radius.circular(20),
-    );
-
-    final paint = Paint()
-      ..color = Color(0xEE1C1C1E)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRRect(rrect, paint);
-
-    // Draw subtle border
-    final borderPaint = Paint()
-      ..color = Color(0x33FFFFFF)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    canvas.drawRRect(rrect, borderPaint);
-
-    super.render(canvas);
-  }
-}
+// Legacy embedded component removed; using reusable IOSNotification component
 
 // Custom component for hacked app icons
 class _HackedAppIcon extends PositionComponent
@@ -612,8 +398,7 @@ class _HackedAppIcon extends PositionComponent
       );
       add(iconSprite);
     } catch (e) {
-      // Fallback
-      print('Error loading icon: $iconAsset');
+      // Fallback - icon loading failed
     }
 
     // App name label
@@ -621,7 +406,7 @@ class _HackedAppIcon extends PositionComponent
       text: appName,
       textRenderer: TextPaint(
         style: TextStyle(
-          color: isActive ? Color(0xFFFF0000) : Color(0xFF666666),
+          color: isActive ? UiColors.brandTeal : Color(0xFF666666),
           fontSize: 32,
           fontWeight: FontWeight.w500,
         ),
@@ -652,7 +437,7 @@ class _HackedAppIcon extends PositionComponent
             final textPaint = label.textRenderer;
             label.textRenderer = TextPaint(
               style: textPaint.style.copyWith(
-                color: Color(0xFFFF0000).withOpacity(newOpacity),
+                color: UiColors.brandTeal.withValues(alpha: newOpacity),
               ),
             );
           },
@@ -682,18 +467,11 @@ class _HackedAppIcon extends PositionComponent
 
   @override
   void onTapDown(TapDownEvent event) {
-    print('Tapped $appName - isActive: $isActive');
     if (isActive) {
       // Power App tapped - transition to Power Dashboard
-      print('Power App activated! Transitioning to dashboard...');
-      print('Current world: ${game.cam.world}');
-      print('PowerDashboard: ${game.powerDashboard}');
-      print('PowerDashboard isMounted: ${game.powerDashboard.isMounted}');
-
       // Use Future to ensure the transition happens
       Future.microtask(() {
         game.cam.world = game.powerDashboard;
-        print('World changed to: ${game.cam.world}');
       });
     }
   }
@@ -730,5 +508,82 @@ class _DarkRoundedIconContainer extends PositionComponent {
   @override
   void render(Canvas canvas) {
     // No border or glow since we're using notification instead
+  }
+}
+
+// Status bar with fixed time to match the image
+class _FixedTimeStatusBar extends PositionComponent
+    with HasGameReference<HackGame> {
+  final double screenWidth;
+  @override
+  final double y;
+  final Color timeColor;
+  final bool centerTime;
+  final bool showWifiBattery;
+
+  _FixedTimeStatusBar({
+    required this.screenWidth,
+    required this.y,
+    required this.timeColor,
+    this.centerTime = true,
+    this.showWifiBattery = true,
+  });
+
+  @override
+  Future<void> onLoad() async {
+    const timeString = '8:41';
+
+    final position = centerTime ? Vector2(screenWidth / 2, y) : Vector2(80, y);
+    final anchor = centerTime ? Anchor.center : Anchor.centerLeft;
+
+    final timeDisplay = TextComponent(
+      text: timeString,
+      textRenderer: TextPaint(
+        style: TextStyle(
+          color: timeColor,
+          fontSize: 40,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      position: position,
+      anchor: anchor,
+    );
+    add(timeDisplay);
+
+    if (showWifiBattery) {
+      // Add connection icon (leftmost)
+      add(
+        SpriteComponent(
+          sprite: Sprite(
+            game.images.fromCache('phase0_icons/connection_white.png'),
+          ),
+          size: Vector2(36, 28),
+          position: Vector2(screenWidth - 150, y),
+          anchor: Anchor.center,
+        ),
+      );
+
+      // Add WiFi icon (middle)
+      add(
+        SpriteComponent(
+          sprite: Sprite(game.images.fromCache('phase0_icons/wifi_white.png')),
+          size: Vector2(40, 32),
+          position: Vector2(screenWidth - 90, y),
+          anchor: Anchor.center,
+        ),
+      );
+
+      // Add battery icon (rightmost)
+      add(
+        SpriteComponent(
+          sprite: Sprite(
+            game.images.fromCache('phase0_icons/battery_white.png'),
+          ),
+          size: Vector2(40, 24),
+          position: Vector2(screenWidth - 35, y),
+          anchor: Anchor.center,
+        ),
+      );
+    }
   }
 }
