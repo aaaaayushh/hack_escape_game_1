@@ -45,8 +45,8 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
     // Add flashing warning banner
     add(
       WarningBanner(
-        position: Vector2(0, 90),
-        size: Vector2(screenWidth, 60),
+        position: Vector2((screenWidth - 800) / 2, 90),
+        size: Vector2(900, 60),
         message: 'SYSTEM BREACH - Unauthorized Access Detected',
         color: UiColors.warnRed,
         flash: true,
@@ -120,7 +120,7 @@ class PhaseOne extends World with HasGameReference<HackGame>, TapCallbacks {
         'active': false,
       },
       {
-        'name': 'Power',
+        'name': 'Emergency Power',
         'icon': 'phase0_icons/power_blackout.png',
         'active': true,
       }, // Only this one is active

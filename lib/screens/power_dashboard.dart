@@ -39,7 +39,7 @@ class PowerDashboard extends World with HasGameReference<HackGame> {
     // Warning banner
     add(
       WarningBanner(
-        position: Vector2(100, 140),
+        position: Vector2((screenWidth - (screenWidth - 200)) / 2, 140),
         size: Vector2(screenWidth - 200, 90),
         message:
             'Emergency generators offline – Restore all 4 circuits to enable backup power.',

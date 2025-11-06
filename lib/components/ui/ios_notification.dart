@@ -65,7 +65,7 @@ class IOSNotification extends PositionComponent {
             fontWeight: FontWeight.bold,
           ),
         ),
-        position: Vector2(120, 30),
+        position: Vector2(110, 25),
         anchor: Anchor.topLeft,
       ),
     );
@@ -73,8 +73,8 @@ class IOSNotification extends PositionComponent {
     // Calculate available width for message text (accounting for icon, padding, and time label)
     final messageMaxWidth =
         size.x -
-        140 -
-        30; // 120 (icon area) + 20 (padding) and 30 (right padding)
+        130 -
+        30; // 110 (icon area) + 20 (padding) and 30 (right padding)
 
     add(
       TextBoxComponent(
@@ -82,8 +82,8 @@ class IOSNotification extends PositionComponent {
         textRenderer: TextPaint(
           style: TextStyle(color: messageColor, fontSize: 22),
         ),
-        position: Vector2(120, 65),
-        size: Vector2(messageMaxWidth, size.y - 75),
+        position: Vector2(110, 58),
+        size: Vector2(messageMaxWidth, size.y - 68),
         align: Anchor.topLeft,
       ),
     );
@@ -94,7 +94,7 @@ class IOSNotification extends PositionComponent {
         textRenderer: TextPaint(
           style: const TextStyle(color: Color(0xFF888888), fontSize: 20),
         ),
-        position: Vector2(size.x - 30, 30),
+        position: Vector2(size.x - 20, 25),
         anchor: Anchor.topRight,
       ),
     );
